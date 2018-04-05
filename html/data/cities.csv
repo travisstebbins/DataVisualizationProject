@@ -1,0 +1,8 @@
+startPlace,startLat,startLon,endPlace,endLat,endLon
+Houston,29.7604,-95.3698,New York City,40.71455,-74.007124
+New York City,40.71455,-74.007124,Santa Barbara,34.4193802,-119.6990509
+San Francisco,37.7771187,-122.4196396,Washington DC,38.8903694,-77.0319595
+Santa Cruz,36.9740181,-122.0309525,Tucson,32.22155,-110.9697571
+Santa Barbara,34.4193802,-119.6990509,Washington DC,38.8903694,-77.0319595
+Tucson,32.22155,-110.9697571,Houston,29.7604,-95.3698
+Washington DC,38.8903694,-77.0319595,Houston,29.7604,-95.3698
