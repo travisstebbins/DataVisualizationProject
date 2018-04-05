@@ -57,7 +57,7 @@ var tweetDisplay = d3.select("body")
 var dateToMillis = d3.time.format("%a %b %d %H:%M:%S %Z %Y");
 
 // Load GeoJSON data and merge with states data
-d3.json("../data/us-states.json", function(json) {
+d3.json("data/us-states.json", function(json) {
 		
 	// Bind the data to the SVG and create one path per GeoJSON feature
 	svg.selectAll("path")
@@ -84,7 +84,7 @@ d3.json("../data/us-states.json", function(json) {
 	var allTweetData = [];
 	var currentTweetData = [];
 
-	d3.json("../data/data.json", function(error, data) {
+	d3.json("data/data.json", function(error, data) {
 		if (error) {
 			return console.warn(error);
 		}
@@ -122,13 +122,15 @@ d3.json("../data/us-states.json", function(json) {
 
 		// Modification of custom tooltip code provided by Malcolm Maclean, "D3 Tips and Tricks" 
 		// http://www.d3noob.org/2013/01/adding-tooltips-to-d3js-graph.html
-		.on("mouseover", function(d) {      
+		.on("mouseover", function(d) {
 	    	div.transition()        
 	      	   .duration(200)      
-	           .style("opacity", .9);      
-	           div.text(d[5])
+	           .style("opacity", .9);   
+	        div.text(d[5])
 	           .style("left", (d3.event.pageX) + "px")
-	           .style("top", (d3.event.pageY - 28) + "px");    
+	           .style("top", (d3.event.pageY - 28) + "px")
+	           .style("width", (d[5].length * 8) + "px")
+	           .style("height", "20px");
 		})   
 
 	    // fade out tooltip on mouse out               
