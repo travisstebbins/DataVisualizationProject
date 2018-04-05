@@ -35,12 +35,13 @@ var svg = d3.select("body")
         
 // Append Div for tooltip to SVG
 var div = d3.select("body")
-		    .append("div")   
-    		.attr("class", "tooltip")               
+		    .append("div")
+    		.attr("class", "tooltip")            
     		.style("opacity", 0);
 
 var tweetDisplay = d3.select("body")
-					 .append("p");
+					 .append("p")
+					 .style("font-size", "16px");
 
 // var url = 'https://newsapi.org/v2/top-headlines?' +
 // 	'country=us&' +
@@ -97,21 +98,21 @@ d3.json("../data/us-states.json", function(json) {
 
 	function createCircles() {
 		svg.selectAll("circle")
-		.data(d3.entries(currentTweetData))
+		.data(currentTweetData)
 		.enter()
 		.append("circle")
 		.attr("cx", function(d) {
 			// console.log("PROJECTING");
-			// console.log(d.value[0] + " " + d.value[1]);
-			// console.log(projection([d.value[1], d.value[0]]));
-			if (projection([d.value[1], d.value[0]]) != null)
-				return projection([d.value[1], d.value[0]])[0];
+			// console.log(d[0] + " " + d[1]);
+			// console.log(projection([d[1], d[0]]));
+			if (projection([d[1], d[0]]) != null)
+				return projection([d[1], d[0]])[0];
 			else
 				return 0;
 		})
 		.attr("cy", function(d) {
-			if (projection([d.value[1], d.value[0]]) != null)
-				return projection([d.value[1], d.value[0]])[1];
+			if (projection([d[1], d[0]]) != null)
+				return projection([d[1], d[0]])[1];
 			else
 				return 0;
 		})
@@ -125,7 +126,7 @@ d3.json("../data/us-states.json", function(json) {
 	    	div.transition()        
 	      	   .duration(200)      
 	           .style("opacity", .9);      
-	           div.text(d.value[5])
+	           div.text(d[5])
 	           .style("left", (d3.event.pageX) + "px")
 	           .style("top", (d3.event.pageY - 28) + "px");    
 		})   
@@ -138,24 +139,24 @@ d3.json("../data/us-states.json", function(json) {
 	    })
 
 	    .on("click", function(d) {
-	    	tweetDisplay.text(d.value[6]);
+	    	tweetDisplay.text(d[6]);
 	    });
 	}
 
 	function updateCircles() {
 		svg.selectAll("circle")
-		.data(d3.entries(currentTweetData))
+		.data(currentTweetData)
 		.transition()
 		.duration(500)
 		.attr("cx", function(d) {
-			if (projection([d.value[4], d.value[3]]) != null)
-				return projection([d.value[4], d.value[3]])[0];
+			if (projection([d[4], d[3]]) != null)
+				return projection([d[4], d[3]])[0];
 			else
 				return 0;
 		})
 		.attr("cy", function(d) {
-			if (projection([d.value[4], d.value[3]]) != null)
-				return projection([d.value[4], d.value[3]])[1];
+			if (projection([d[4], d[3]]) != null)
+				return projection([d[4], d[3]])[1];
 			else
 				return 0;
 		});
