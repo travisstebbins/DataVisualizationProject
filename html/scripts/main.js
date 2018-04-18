@@ -58,6 +58,8 @@ var tweetDisplay = d3.select("body")
 
 var dateToMillis = d3.time.format("%a %b %d %H:%M:%S %Z %Y");
 var currentTime;
+var minTime;
+var maxTime;
 
 // Load GeoJSON data and merge with states data
 d3.json("data/us-states.json", function(json) {
@@ -96,6 +98,8 @@ d3.json("data/us-states.json", function(json) {
 		}
 		allTweetData = data;
 		currentTime = dateToMillis.parse(allTweetData[0][7]).getTime() - 1;
+		minTime = currentTime;
+		maxTime = dateToMillis.parse(allTweetData[allTweetData.length - 1][7]).getTime() + 1;
 
 		timer = d3.timer(timerCallback);
 	});
@@ -161,12 +165,22 @@ d3.json("data/us-states.json", function(json) {
 			else
 				return 0;
 		});
+
+		svg.selectAll("circle")
+			.data(currentTweetData)
+			.exit()
+			.remove();
 	}
 
 	var tweetCounter = 0;
 
 	function timerCallback(elapsed) {
-		currentTime += 1000;
+
+		while (tweetCounter >= 0 && currentTweetData.length > 0 && tweetCounter - 1 <= currentTweetData.length && dateToMillis.parse(currentTweetData[tweetCounter - 1][7]).getTime() > currentTime) {
+			console.log("deleting element " + (tweetCounter - 1));
+			currentTweetData.splice(tweetCounter - 1, 1);
+			tweetCounter--;
+		}
 
 		while (tweetCounter < allTweetData.length && dateToMillis.parse(allTweetData[tweetCounter][7]).getTime() < currentTime) {
 			currentTweetData.push(allTweetData[tweetCounter]);
@@ -175,4 +189,17 @@ d3.json("data/us-states.json", function(json) {
 
 		createCircles();
 	}
+});
+
+document.addEventListener('keydown', function(event) {
+    if(event.keyCode == 37) {
+        if (currentTime > minTime) {
+        	currentTime -= 3000;
+        }
+    }
+    else if(event.keyCode == 39) {
+        if (currentTime < maxTime) {
+        	currentTime += 3000;
+        }
+    }
 });
