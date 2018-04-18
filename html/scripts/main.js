@@ -39,10 +39,12 @@ var div = d3.select("body")
     		.attr("class", "tooltip")            
     		.style("opacity", 0);
 
+// append paragraph for displaying tweet content
 var tweetDisplay = d3.select("body")
 					 .append("p")
 					 .style("font-size", "16px");
 
+// news api code
 // var url = 'https://newsapi.org/v2/top-headlines?' +
 // 	'country=us&' +
 // 	'apiKey=664519e8bb6249439872b39dde950086';
@@ -55,6 +57,7 @@ var tweetDisplay = d3.select("body")
 // });
 
 var dateToMillis = d3.time.format("%a %b %d %H:%M:%S %Z %Y");
+var currentTime;
 
 // Load GeoJSON data and merge with states data
 d3.json("data/us-states.json", function(json) {
@@ -81,18 +84,19 @@ d3.json("data/us-states.json", function(json) {
 		}
 	});
 
+	// holds all of the loaded tweet data
 	var allTweetData = [];
+	// holds the tweet data tweeted up to currentTime
 	var currentTweetData = [];
 
+	// load in tweet data
 	d3.json("data/data.json", function(error, data) {
 		if (error) {
 			return console.warn(error);
 		}
 		allTweetData = data;
-		// for (var i = 0; i < allTweetData.length; ++i)
-		// {
-		// 	console.log(allTweetData[i][7] + " in millis " + dateToMillis.parse(allTweetData[i][7]).getTime());
-		// }
+		currentTime = dateToMillis.parse(allTweetData[0][7]).getTime() - 1;
+
 		timer = d3.timer(timerCallback);
 	});
 
@@ -102,9 +106,6 @@ d3.json("data/us-states.json", function(json) {
 		.enter()
 		.append("circle")
 		.attr("cx", function(d) {
-			// console.log("PROJECTING");
-			// console.log(d[0] + " " + d[1]);
-			// console.log(projection([d[1], d[0]]));
 			if (projection([d[1], d[0]]) != null)
 				return projection([d[1], d[0]])[0];
 			else
@@ -142,15 +143,13 @@ d3.json("data/us-states.json", function(json) {
 
 	    .on("click", function(d) {
 	    	tweetDisplay.text(d[6]);
-	    });
-	}
+	    })
 
-	function updateCircles() {
-		svg.selectAll("circle")
-		.data(currentTweetData)
-		.transition()
+	    // handle animation of circle
+	    .transition()
 		.duration(500)
 		.attr("cx", function(d) {
+			console.log("animating " + d[2] + " to " + d[5]);
 			if (projection([d[4], d[3]]) != null)
 				return projection([d[4], d[3]])[0];
 			else
@@ -164,18 +163,16 @@ d3.json("data/us-states.json", function(json) {
 		});
 	}
 
-	var counter = 0;
-	var index = 0;
+	var tweetCounter = 0;
+
 	function timerCallback(elapsed) {
-		counter++;
-		if (counter > 40) {
-			counter = 0;
-			if (index < allTweetData.length - 1) {
-				currentTweetData.push(allTweetData[index]);
-				index++;
-				createCircles();
-				updateCircles();
-			}
+		currentTime += 1000;
+
+		while (tweetCounter < allTweetData.length && dateToMillis.parse(allTweetData[tweetCounter][7]).getTime() < currentTime) {
+			currentTweetData.push(allTweetData[tweetCounter]);
+			tweetCounter++;
 		}
+
+		createCircles();
 	}
 });
