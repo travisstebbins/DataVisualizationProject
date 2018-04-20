@@ -12,26 +12,28 @@ http://bl.ocks.org/mbostock/3888852  */
 		
 //Width and height of map
 var width = 960;
-var height = 500;
+var height = 540;
+var sliderHeight = 50;
 
 // D3 Projection
-var projection = d3.geoAlbersUsa()
-				   .translate([width/2, height/2])    	// translate to center of screen
-				   .scale([1000]);          			// scale things down so see entire US
+var projection = d3.geoAlbersUsa();
+				   //.translate([width/2, height/2])    	// translate to center of screen
+				   //.scale([1000]);          			// scale things down so see entire US
         
 // Define path generator
 var path = d3.geoPath()               // path generator that will convert GeoJSON to SVG paths
 		  	 .projection(projection);  // tell path generator to use albersUsa projection
-		
-// Define linear scale for output
-var color = d3.scaleLinear()
-			  .range(["rgb(213,222,217)","rgb(69,173,168)","rgb(84,36,55)","rgb(217,91,67)"]);
 
 //Create SVG element and append map to the SVG
 var svg = d3.select("body")
 			.append("svg")
 			.attr("width", width)
 			.attr("height", height);
+
+var sliderSvg = d3.select("body")
+					.append("svg")
+					.attr("width", width)
+					.attr("height", sliderHeight);
         
 // Append Div for tooltip to SVG
 var div = d3.select("body")
@@ -57,6 +59,7 @@ var tweetDisplay = d3.select("body")
 // });
 
 var parseTime = d3.timeParse("%a %b %d %H:%M:%S %Z %Y");
+var formatDate = d3.timeFormat("%b %d %H:%M:%S");
 //var timeSecs = d3.timeMinute
 var currentTime;
 var minTime;
@@ -94,8 +97,6 @@ d3.json("data/us-states.json", function(json) {
 
 	// load in tweet data
 	d3.json("data/data.json", function(error, data) {
-		var formatTime = d3.timeFormat("%Q");
-		console.log(d3.timeSecond(new Date)); // "June 30, 2015"
 		if (error) {
 			return console.warn(error);
 		}
@@ -106,6 +107,45 @@ d3.json("data/us-states.json", function(json) {
 		currentTime = allTweetData[0][7].getTime() - 1;
 		minTime = currentTime;
 		maxTime = allTweetData[allTweetData.length - 1][7].getTime() + 1;
+
+		// append slider for timeline
+		var sliderMargin = {right: 50, left: 50},
+		    sliderWidth = width - sliderMargin.left - sliderMargin.right;
+
+		var sliderX = d3.scaleTime()
+		    .domain(d3.extent(allTweetData, function(d) { return d[7]; }))
+		    .range([0, sliderWidth])
+		    .clamp(true);
+
+		var slider = sliderSvg.append("g")
+		    .attr("class", "slider")
+		    .attr("transform", "translate(" + sliderMargin.left + "," + sliderHeight / 4 + ")");
+
+		slider.append("line")
+		    .attr("class", "track")
+		    .attr("x1", sliderX.range()[0])
+		    .attr("x2", sliderX.range()[1])
+		  .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
+		    .attr("class", "track-inset")
+		  .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
+		    .attr("class", "track-overlay")
+		    .call(d3.drag()
+		        .on("start.interrupt", function() { slider.interrupt(); })
+		        .on("start drag", function() { handle.attr("cx", sliderX(sliderX.invert(d3.event.x))); currentTime = sliderX.invert(d3.event.x); }));
+
+		slider.insert("g", ".track-overlay")
+		    .attr("class", "ticks")
+		    .attr("transform", "translate(0," + 18 + ")")
+		  .selectAll("text")
+		  .data(sliderX.ticks(10))
+		  .enter().append("text")
+		    .attr("x", sliderX)
+		    .attr("text-anchor", "middle")
+		    .text(function(d) { return formatDate(d); });
+
+		var handle = slider.insert("circle", ".track-overlay")
+				    .attr("class", "handle")
+				    .attr("r", 9);
 
 		timer = d3.timer(timerCallback);
 	});
