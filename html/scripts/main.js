@@ -34,6 +34,11 @@ var sliderSvg = d3.select("body")
 					.append("svg")
 					.attr("width", width)
 					.attr("height", sliderHeight);
+
+var slider;
+var sliderX;
+var handle;
+var draggingHandle = false;
         
 // Append Div for tooltip to SVG
 var div = d3.select("body")
@@ -104,20 +109,20 @@ d3.json("data/us-states.json", function(json) {
 			data[i][7] = parseTime(data[i][7]);
 		}
 		allTweetData = data;
-		currentTime = allTweetData[0][7].getTime() - 1;
+		currentTime = allTweetData[0][7].getTime();
 		minTime = currentTime;
-		maxTime = allTweetData[allTweetData.length - 1][7].getTime() + 1;
+		maxTime = allTweetData[allTweetData.length - 1][7].getTime();
 
 		// append slider for timeline
 		var sliderMargin = {right: 50, left: 50},
 		    sliderWidth = width - sliderMargin.left - sliderMargin.right;
 
-		var sliderX = d3.scaleTime()
-		    .domain(d3.extent(allTweetData, function(d) { return d[7]; }))
+		sliderX = d3.scaleTime()
+		    .domain([new Date(d3.extent(allTweetData, function(d) { return d[7]; })[0].getTime() - 10), new Date(d3.extent(allTweetData, function(d) { return d[7]; })[1].getTime() + 10)])
 		    .range([0, sliderWidth])
 		    .clamp(true);
 
-		var slider = sliderSvg.append("g")
+		slider = sliderSvg.append("g")
 		    .attr("class", "slider")
 		    .attr("transform", "translate(" + sliderMargin.left + "," + sliderHeight / 4 + ")");
 
@@ -131,7 +136,9 @@ d3.json("data/us-states.json", function(json) {
 		    .attr("class", "track-overlay")
 		    .call(d3.drag()
 		        .on("start.interrupt", function() { slider.interrupt(); })
-		        .on("start drag", function() { handle.attr("cx", sliderX(sliderX.invert(d3.event.x))); currentTime = sliderX.invert(d3.event.x); }));
+		        .on("start", function() { draggingHandle = true; })
+		        .on("start drag", function() { draggingHandle = true; currentTime = sliderX.invert(d3.event.x).getTime(); handle.attr("cx", sliderX(currentTime)); })
+		    	.on("end", function() { draggingHandle = false; currentTime = sliderX.invert(d3.event.x).getTime(); handle.attr("cx", sliderX(currentTime)); }));
 
 		slider.insert("g", ".track-overlay")
 		    .attr("class", "ticks")
@@ -143,7 +150,7 @@ d3.json("data/us-states.json", function(json) {
 		    .attr("text-anchor", "middle")
 		    .text(function(d) { return formatDate(d); });
 
-		var handle = slider.insert("circle", ".track-overlay")
+		handle = slider.insert("circle", ".track-overlay")
 				    .attr("class", "handle")
 				    .attr("r", 9);
 
@@ -225,6 +232,15 @@ d3.json("data/us-states.json", function(json) {
 
 	function timerCallback(elapsed) {
 
+		if (!draggingHandle && currentTime < maxTime) {
+			currentTime += 1000;
+			if (currentTime > maxTime) {
+				currentTime = maxTime;
+			}
+			//currentTime = minTime;
+			handle.attr("cx", sliderX(currentTime));
+		}
+
 		// remove tweets that are after the current time
 		while (tweetCounter >= 0 && currentTweetData.length > 0 && tweetCounter - 1 <= currentTweetData.length && currentTweetData[tweetCounter - 1][7].getTime() > currentTime) {
 			console.log("deleting element " + (tweetCounter - 1));
@@ -240,17 +256,4 @@ d3.json("data/us-states.json", function(json) {
 
 		createCircles();
 	}
-});
-
-document.addEventListener('keydown', function(event) {
-    if(event.keyCode == 37) {
-        if (currentTime > minTime) {
-        	currentTime -= 3000;
-        }
-    }
-    else if(event.keyCode == 39) {
-        if (currentTime < maxTime) {
-        	currentTime += 3000;
-        }
-    }
 });
