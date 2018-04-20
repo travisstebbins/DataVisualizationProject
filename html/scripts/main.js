@@ -16,8 +16,8 @@ var height = 500;
 
 // D3 Projection
 var projection = d3.geo.albersUsa()
-				   .translate([width/2, height/2])    // translate to center of screen
-				   .scale([1000]);          // scale things down so see entire US
+				   .translate([width/2, height/2])    	// translate to center of screen
+				   .scale([1000]);          			// scale things down so see entire US
         
 // Define path generator
 var path = d3.geo.path()               // path generator that will convert GeoJSON to SVG paths
@@ -104,6 +104,7 @@ d3.json("data/us-states.json", function(json) {
 		timer = d3.timer(timerCallback);
 	});
 
+	// creates and animates the circles based on currentTwitterData array
 	function createCircles() {
 		svg.selectAll("circle")
 		.data(currentTweetData)
@@ -166,22 +167,26 @@ d3.json("data/us-states.json", function(json) {
 				return 0;
 		});
 
+		// delete circle if it is removed from currentTwitterData
 		svg.selectAll("circle")
 			.data(currentTweetData)
 			.exit()
 			.remove();
 	}
 
+	// keeps track of current position in allTwitterData
 	var tweetCounter = 0;
 
 	function timerCallback(elapsed) {
 
+		// remove tweets that are after the current time
 		while (tweetCounter >= 0 && currentTweetData.length > 0 && tweetCounter - 1 <= currentTweetData.length && dateToMillis.parse(currentTweetData[tweetCounter - 1][7]).getTime() > currentTime) {
 			console.log("deleting element " + (tweetCounter - 1));
 			currentTweetData.splice(tweetCounter - 1, 1);
 			tweetCounter--;
 		}
 
+		// add tweets that are before the current time
 		while (tweetCounter < allTweetData.length && dateToMillis.parse(allTweetData[tweetCounter][7]).getTime() < currentTime) {
 			currentTweetData.push(allTweetData[tweetCounter]);
 			tweetCounter++;
