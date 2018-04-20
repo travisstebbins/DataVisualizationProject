@@ -15,16 +15,16 @@ var width = 960;
 var height = 500;
 
 // D3 Projection
-var projection = d3.geo.albersUsa()
+var projection = d3.geoAlbersUsa()
 				   .translate([width/2, height/2])    	// translate to center of screen
 				   .scale([1000]);          			// scale things down so see entire US
         
 // Define path generator
-var path = d3.geo.path()               // path generator that will convert GeoJSON to SVG paths
+var path = d3.geoPath()               // path generator that will convert GeoJSON to SVG paths
 		  	 .projection(projection);  // tell path generator to use albersUsa projection
 		
 // Define linear scale for output
-var color = d3.scale.linear()
+var color = d3.scaleLinear()
 			  .range(["rgb(213,222,217)","rgb(69,173,168)","rgb(84,36,55)","rgb(217,91,67)"]);
 
 //Create SVG element and append map to the SVG
@@ -56,7 +56,8 @@ var tweetDisplay = d3.select("body")
 // 		console.log(response.json());
 // });
 
-var dateToMillis = d3.time.format("%a %b %d %H:%M:%S %Z %Y");
+var parseTime = d3.timeParse("%a %b %d %H:%M:%S %Z %Y");
+//var timeSecs = d3.timeMinute
 var currentTime;
 var minTime;
 var maxTime;
@@ -93,13 +94,18 @@ d3.json("data/us-states.json", function(json) {
 
 	// load in tweet data
 	d3.json("data/data.json", function(error, data) {
+		var formatTime = d3.timeFormat("%Q");
+		console.log(d3.timeSecond(new Date)); // "June 30, 2015"
 		if (error) {
 			return console.warn(error);
 		}
+		for (var i = 0; i < data.length; i++) {
+			data[i][7] = parseTime(data[i][7]);
+		}
 		allTweetData = data;
-		currentTime = dateToMillis.parse(allTweetData[0][7]).getTime() - 1;
+		currentTime = allTweetData[0][7].getTime() - 1;
 		minTime = currentTime;
-		maxTime = dateToMillis.parse(allTweetData[allTweetData.length - 1][7]).getTime() + 1;
+		maxTime = allTweetData[allTweetData.length - 1][7].getTime() + 1;
 
 		timer = d3.timer(timerCallback);
 	});
@@ -180,14 +186,14 @@ d3.json("data/us-states.json", function(json) {
 	function timerCallback(elapsed) {
 
 		// remove tweets that are after the current time
-		while (tweetCounter >= 0 && currentTweetData.length > 0 && tweetCounter - 1 <= currentTweetData.length && dateToMillis.parse(currentTweetData[tweetCounter - 1][7]).getTime() > currentTime) {
+		while (tweetCounter >= 0 && currentTweetData.length > 0 && tweetCounter - 1 <= currentTweetData.length && currentTweetData[tweetCounter - 1][7].getTime() > currentTime) {
 			console.log("deleting element " + (tweetCounter - 1));
 			currentTweetData.splice(tweetCounter - 1, 1);
 			tweetCounter--;
 		}
 
 		// add tweets that are before the current time
-		while (tweetCounter < allTweetData.length && dateToMillis.parse(allTweetData[tweetCounter][7]).getTime() < currentTime) {
+		while (tweetCounter < allTweetData.length && allTweetData[tweetCounter][7].getTime() < currentTime) {
 			currentTweetData.push(allTweetData[tweetCounter]);
 			tweetCounter++;
 		}
