@@ -13,7 +13,7 @@ http://bl.ocks.org/mbostock/3888852  */
 //Width and height of map
 var width = 960;
 var height = 540;
-var sliderHeight = 50;
+var sliderHeight = 80;
 
 // D3 Projection
 var projection = d3.geoAlbersUsa();
@@ -153,6 +153,14 @@ d3.json("data/us-states.json", function(json) {
 		handle = slider.insert("circle", ".track-overlay")
 				    .attr("class", "handle")
 				    .attr("r", 9);
+
+		for (var i = 0; i < allTweetData.length; ++i)
+		{
+			slider.append("circle")
+				.attr("cx", sliderX(allTweetData[i][7].getTime()))
+				.attr("cy", -10)
+				.attr("r", 5);
+		}
 
 		timer = d3.timer(timerCallback);
 	});
