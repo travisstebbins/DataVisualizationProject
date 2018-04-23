@@ -13,7 +13,7 @@ http://bl.ocks.org/mbostock/3888852  */
 //Width and height of map
 var width = 960;
 var height = 540;
-var sliderHeight = 80;
+var sliderHeight = 100;
 
 // D3 Projection
 var projection = d3.geoAlbersUsa();
@@ -158,7 +158,8 @@ function createTimeline() {
 
 	slider = sliderSvg.append("g")
 	    .attr("class", "slider")
-	    .attr("transform", "translate(" + sliderMargin.left + "," + sliderHeight / 4 + ")");
+	    .attr("transform", "translate(" + sliderMargin.left + "," + sliderHeight / 2 + ")")
+	    .attr("height", 75);
 
 	slider.append("line")
 	    .attr("class", "track")
@@ -188,15 +189,22 @@ function createTimeline() {
 			    .attr("class", "handle")
 			    .attr("r", 9);
 
-	slider.selectAll("circle")
+	var newsIconPoints = [[0, 0], [-10, -10], [-20, -10], [-20, -40], [20, -40], [20, -10], [10, -10], [0, 0]];
+
+	slider.selectAll("path")
 		.data(newsArticles)
 		.enter()
-		.append("circle")
-			.attr("cx", function (d) {
-				return sliderX(d.publishedAt.getTime());
+		.append("svg:path")
+			.attr("d", d3.line()(newsIconPoints))
+			.attr("transform", function(d) {
+				return "translate(" + sliderX(d.publishedAt.getTime()) + ", " + -5 + ")";
 			})
-			.attr("cy", -15)
-			.attr("r", 5)
+			.attr("class", "newsIcon")
+			.attr("stroke", "black")
+			// .attr("x", function (d) {
+			// 	return sliderX(d.publishedAt.getTime());
+			// })
+			// .attr("y", -15)
 			.on("mouseover", function(d) {
 		    	newsTooltip.transition()        
 		      	   .duration(200)      
