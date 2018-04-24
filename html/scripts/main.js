@@ -30,7 +30,7 @@ var path = d3.geoPath()               // path generator that will convert GeoJSO
 		  	 .projection(projection);  // tell path generator to use albersUsa projection
 
 //Create SVG element and append map to the SVG
-var svg = d3.select("body")
+var svg = d3.select("#vizdiv")
 			.append("svg")
 			.attr("width", width)
 			.attr("height", height)
@@ -88,18 +88,9 @@ var zoom = d3.zoom()
     .on("zoom", zoomed);
 
 
+d3.select("#vizdiv").append("br");
 
-d3.select("body").append("br");
-
-
-
-
-
-
-
-
-
-var sliderSvg = d3.select("body")
+var sliderSvg = d3.select("#vizdiv")
 					.append("svg")
 					.attr("width", width)
 					.attr("height", sliderHeight);
@@ -114,6 +105,7 @@ var sliderSpeed = 1000;
         
 // Append Div for tweet tooltip to svg
 d3.select("body").append("br");
+
 var tweetTooltip = d3.select("body")
 		    .append("div")
     		.attr("class", "tweetTooltip")            
@@ -128,7 +120,7 @@ var newsTooltip = d3.select("body")
 // append paragraph for displaying tweet content
 var tweetDisplay = d3.select("body")
 					 .append("p")
-					 .style("font-size", "16px");
+					 .attr("id", "tweetDisplay");
 
 // data arrays
 // holds all of the loaded tweet data
@@ -283,21 +275,21 @@ function createTimeline() {
 		.data(newsArticles)
 		.enter()
 		.append("svg:path")
+			.attr("class", "newsIcon")
 			.attr("d", d3.line()(newsIconPoints))
 			.attr("transform", function(d) {
 				return "translate(" + sliderX(d.publishedAt.getTime()) + ", " + -5 + ")";
 			})
 			.attr("class", "newsIcon")
-			.attr("stroke", "black")
 			.on("mouseover", function(d) {
 		    	newsTooltip.transition()        
 		      	   .duration(200)      
 		           .style("opacity", .9);   
 		        newsTooltip.text(d.title)
-		           .style("left", (d3.event.pageX) + "px")
-		           .style("top", (d3.event.y - d.title.length) + "px")
+		           .style("left", ((d3.event.pageX) - d.title.length * 1.5) + "px")
+		           .style("top", (d3.event.y - 75) + "px")
 		           .style("width", (d.title.length * 3) + "px")
-		           .style("height", (d.title.length) + "px");
+		           .style("height", 50 + "px");
 			})
 
 		    // fade out tooltip on mouse out               
