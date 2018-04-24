@@ -1,14 +1,14 @@
 import requests
 import json
+import os
 import nltk
 from nltk import ne_chunk, pos_tag, word_tokenize
 from nltk.tree import Tree
 
 PLACES_API = "https://maps.googleapis.com/maps/api/place/textsearch/json"
-PLACES_API_KEY = ""
+PLACES_API_KEY = os.environ['PLACES_API_KEY']
 
 Tweets_File = "tweets.json"
-
 
 def extract_location_query(tweet):
     chunked = ne_chunk(pos_tag(word_tokenize(tweet)))
