@@ -15,6 +15,13 @@ var width = 960;
 var height = 540;
 var sliderHeight = 100;
 
+
+
+//Radius of circles
+var initialRad = 100;
+var globalRad = Math.sqrt(initialRad);
+
+
 // D3 Projection
 var projection = d3.geoAlbersUsa();
         
@@ -26,7 +33,71 @@ var path = d3.geoPath()               // path generator that will convert GeoJSO
 var svg = d3.select("body")
 			.append("svg")
 			.attr("width", width)
-			.attr("height", height);
+			.attr("height", height)
+			.append("g");
+
+var forBrush;
+
+var e= d3.select(".selection");
+
+var brush = d3.brush();
+
+function visFilter(d){
+e = d3.select(".selection");
+if(e["_groups"][0][0]==null )
+{
+	return "visible";
+}
+if( e.attr("x")==null)
+	return "visible";
+
+
+	if(d3.select(this).attr("fx")> e.attr("x")&&
+		d3.select(this).attr("fy")>e.attr("y")&&
+		d3.select(this).attr("fx")<parseInt(e.attr("x"))+parseInt(e.attr("width"))&&
+		d3.select(this).attr("fy")<parseInt(e.attr("y"))+parseInt(e.attr("height"))) 
+		return "visible";
+	else 
+		return "hidden";
+}
+
+
+
+
+function endbrush(d)
+{
+	
+			svg.selectAll("circle").attr("visibility", visFilter);}
+ brush.on("end", endbrush);
+
+function zoomed() {
+	
+
+   svg.attr("transform",d3.event.transform);
+
+
+	var a=d3.event.transform.k;
+	//console.log(a);
+	if(a>0)
+		globalRad=Math.sqrt(initialRad/a);
+	svg.selectAll("circle").attr("r" , globalRad);
+}
+
+var zoom = d3.zoom()
+    .scaleExtent([.75, 20])
+    .on("zoom", zoomed);
+
+
+
+d3.select("body").append("br");
+
+
+
+
+
+
+
+
 
 var sliderSvg = d3.select("body")
 					.append("svg")
@@ -42,6 +113,7 @@ var draggingHandle = false;
 var sliderSpeed = 1000;
         
 // Append Div for tweet tooltip to svg
+d3.select("body").append("br");
 var tweetTooltip = d3.select("body")
 		    .append("div")
     		.attr("class", "tweetTooltip")            
@@ -96,6 +168,7 @@ function loadMapData() {
 			.style("fill", function(d) {
 				return "rgb(213,222,217)";
 			});
+			forBrush = svg.append("g");
 
 		loadTweetData();
 	});
@@ -194,7 +267,7 @@ function createTimeline() {
 	    .attr("class", "ticks")
 	    .attr("transform", "translate(0," + 18 + ")")
 	  .selectAll("text")
-	  .data(sliderX.ticks(10))
+	  .data(sliderX.ticks(8))
 	  .enter().append("text")
 	    .attr("x", sliderX)
 	    .attr("text-anchor", "middle")
@@ -299,7 +372,7 @@ function createCircles() {
 		else
 			return 0;
 	})
-	.attr("r", 10)
+	.attr("r", globalRad)
 		.style("fill", "steelblue")	
 		.style("opacity", 0.85)	
 
@@ -328,6 +401,7 @@ function createCircles() {
            .style("top", (d3.event.pageY - 28) + "px")
            .style("width", (cityState.length * 5) + "px")
            .style("height", (cityState.length * 3) + "px");
+		tweetDisplay.text(d.text);
 	})
 
     // fade out tooltip on mouse out               
@@ -337,9 +411,18 @@ function createCircles() {
            .style("opacity", 0);   
     })
 
-    .on("click", function(d) {
-    	tweetDisplay.text(d.text);
-    })
+		.attr("fx", function(d) {
+			if (projection([d.destination.lng, d.destination.lat]) != null)
+				return projection([d.destination.lng, d.destination.lat])[0];
+			else
+				return 0;
+		})
+		.attr("fy", function(d) {
+			if (projection([d.destination.lng, d.destination.lat]) != null)
+				return projection([d.destination.lng, d.destination.lat])[1];
+			else
+				return 0;
+		})
 
     // handle animation of circle
     .transition()
@@ -362,4 +445,10 @@ function createCircles() {
 		.data(currentTweetData)
 		.exit()
 		.remove();
+
+
+	
+	forBrush.attr("class", "overlay").call(brush);
+	svg.call(zoom);
+
 }
