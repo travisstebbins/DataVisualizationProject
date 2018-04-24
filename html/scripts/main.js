@@ -39,6 +39,7 @@ var sliderWidth;
 var sliderX;
 var handle;
 var draggingHandle = false;
+var sliderSpeed = 1000;
         
 // Append Div for tweet tooltip to svg
 var tweetTooltip = d3.select("body")
@@ -71,6 +72,7 @@ var tweetCounter = 0;
 var parseTweetTime = d3.timeParse("%a %b %d %H:%M:%S %Z %Y");
 var parseNewsTime = d3.timeParse("%Y-%m-%dT%H:%M:%SZ");
 var formatDate = d3.timeFormat("%b %d %H:%M:%S");
+var formatDateForNews = d3.timeFormat("%Y-%m-%dT%H:%M:%S");
 
 var currentTime;
 var minTime;
@@ -111,15 +113,26 @@ function loadTweetData() {
 
 		allTweetData = data;
 
-		loadNewsData();
+		var oldestTweetTime = formatDateForNews(new Date(allTweetData[0].time.getTime() - 300000));
+		var newestTweetTime = formatDateForNews(new Date(allTweetData[allTweetData.length - 1].time.getTime() + 300000));
+
+		loadNewsData(oldestTweetTime, newestTweetTime);
 	});
 }
 
-function loadNewsData() {
+function loadNewsData(oldestTweetTime, newestTweetTime) {
+	console.log("oldestTweetTime = " + oldestTweetTime);
+	console.log("newestTweetTime = " + newestTweetTime);
 	//news api code
-	var url = 'https://newsapi.org/v2/top-headlines?' +
-				'country=us&' +
+	var url = 'https://newsapi.org/v2/everything?' +
+				//'country=us&' +
+				'q=united states&' +
+				'lang=en&' +
+				'from=' + oldestTweetTime + '&' +
+				'to=' + newestTweetTime + '&' +
 				'apiKey=664519e8bb6249439872b39dde950086';
+
+	console.log(url);
 
 	var req = new Request(url);
 
@@ -153,7 +166,8 @@ function createTimeline() {
 	sliderWidth = width - sliderMargin.left - sliderMargin.right;
 
 	sliderX = d3.scaleTime()
-	    .domain([new Date(currentTime), new Date(currentTime + timeRange)])
+	    //.domain([new Date(currentTime), new Date(currentTime + timeRange)])
+	   	.domain([new Date(d3.extent(newsArticles, function(d) { return d.publishedAt; })[0].getTime() - 10), new Date(d3.extent(newsArticles, function(d) { return d.publishedAt; })[1].getTime() + 10)])
 	    .range([0, sliderWidth])
 	    .clamp(true);
 
@@ -234,7 +248,7 @@ function updateTimeline()
 	    .attr("x", sliderX)
 	    .attr("text-anchor", "middle")
 	    .text(function(d) { return formatDate(d); })
-	  .exit()
+	slider.exit()
 	  	.remove();
 
 	//var newsIconPoints = [[0, 0], [-10, -10], [-20, -10], [-20, -40], [20, -40], [20, -10], [10, -10], [0, 0]];
@@ -242,7 +256,7 @@ function updateTimeline()
 
 function timerCallback(elapsed) {
 	if (!draggingHandle && currentTime < maxTime) {
-		currentTime += 10000;
+		currentTime += sliderSpeed;
 		if (currentTime > maxTime) {
 			currentTime = maxTime;
 		}
@@ -262,7 +276,7 @@ function timerCallback(elapsed) {
 		tweetCounter++;
 	}
 
-	updateTimeline();
+	//updateTimeline();
 
 	createCircles();
 }
@@ -292,14 +306,28 @@ function createCircles() {
 	// Modification of custom tooltip code provided by Malcolm Maclean, "D3 Tips and Tricks" 
 	// http://www.d3noob.org/2013/01/adding-tooltips-to-d3js-graph.html
 	.on("mouseover", function(d) {
+		var cityState;
+		if (d.destination.city.length > 0 && d.destination.state.length > 0) {
+			cityState = d.destination.city + ", " + d.destination.state;
+		}
+		else if (d.destination.city.length > 0) {
+			cityState = d.destination.city;
+		}
+		else if (d.destination.state.length > 0) {
+			cityState = d.destination.state;
+		}
+		else
+		{
+			cityState = d.destination.name;
+		}
     	tweetTooltip.transition()        
       	   .duration(200)      
            .style("opacity", .9);   
-        tweetTooltip.text(d.destination.city + ", " + d.destination.state)
+        tweetTooltip.text(cityState)
            .style("left", (d3.event.pageX) + "px")
            .style("top", (d3.event.pageY - 28) + "px")
-           .style("width", ((d.destination.city + ", " + d.destination.state).length * 3) + "px")
-           .style("height", ((d.destination.city + ", " + d.destination.state).length * 1) + "px");
+           .style("width", (cityState.length * 5) + "px")
+           .style("height", (cityState.length * 3) + "px");
 	})
 
     // fade out tooltip on mouse out               
