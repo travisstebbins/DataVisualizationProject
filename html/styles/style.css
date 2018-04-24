@@ -17,6 +17,11 @@
   color: red;
 }
 
+.tweetCircle {
+  fill: steelblue;
+  opacity: 0.65;
+}
+
 #tweetDisplay {
   margin: auto;
   text-align: center;
@@ -25,6 +30,22 @@
   width: 960px;
   height: 100px;
   background-color: rgb(230, 240, 255);
+}
+
+#buttonDiv {
+  margin: auto;
+  width: 60px;
+  height: 40px;
+}
+
+#buttonDiv button {
+  width: 60px;
+  height: 30px;
+}
+
+#buttonDiv button p {
+  font: 14px sans-serif;
+  margin: auto;
 }
 
 /* On mouse hover, lighten state color */
@@ -60,7 +81,7 @@ div.newsTooltip {
 }
 
 .newsIcon {
-  fill: rgb(50, 100, 200);
+  fill: steelblue;
   stroke: rgb(150, 175, 255);
   stroke-width: 2px;
 }

@@ -12,7 +12,7 @@ http://bl.ocks.org/mbostock/3888852  */
 		
 //Width and height of map
 var width = 960;
-var height = 540;
+var height = 500;
 var sliderHeight = 100;
 
 
@@ -38,19 +38,18 @@ var svg = d3.select("#vizdiv")
 
 var forBrush;
 
-var e= d3.select(".selection");
+var e = d3.select(".selection");
 
 var brush = d3.brush();
+brush.on("end", endbrush);
 
-function visFilter(d){
-e = d3.select(".selection");
-if(e["_groups"][0][0]==null )
-{
-	return "visible";
-}
-if( e.attr("x")==null)
-	return "visible";
-
+function visFilter(d) {
+	e = d3.select(".selection");
+	if(e["_groups"][0][0]==null) {
+		return "visible";
+	}
+	if( e.attr("x")==null)
+		return "visible";
 
 	if(d3.select(this).attr("fx")> e.attr("x")&&
 		d3.select(this).attr("fy")>e.attr("y")&&
@@ -61,22 +60,14 @@ if( e.attr("x")==null)
 		return "hidden";
 }
 
-
-
-
-function endbrush(d)
-{
+function endbrush(d) {
+	svg.selectAll("circle").attr("visibility", visFilter);
+}
 	
-			svg.selectAll("circle").attr("visibility", visFilter);}
- brush.on("end", endbrush);
-
 function zoomed() {
-	
+	svg.attr("transform", d3.event.transform);
 
-   svg.attr("transform",d3.event.transform);
-
-
-	var a=d3.event.transform.k;
+	var a = d3.event.transform.k;
 	//console.log(a);
 	if(a>0)
 		globalRad=Math.sqrt(initialRad/a);
@@ -86,7 +77,6 @@ function zoomed() {
 var zoom = d3.zoom()
     .scaleExtent([.75, 20])
     .on("zoom", zoomed);
-
 
 d3.select("#vizdiv").append("br");
 
@@ -102,6 +92,8 @@ var sliderX;
 var handle;
 var draggingHandle = false;
 var sliderSpeed = 1000;
+var playPauseButton;
+var play = true;
         
 // Append Div for tweet tooltip to svg
 d3.select("body").append("br");
@@ -135,7 +127,7 @@ var tweetCounter = 0;
 
 var parseTweetTime = d3.timeParse("%a %b %d %H:%M:%S %Z %Y");
 var parseNewsTime = d3.timeParse("%Y-%m-%dT%H:%M:%SZ");
-var formatDate = d3.timeFormat("%b %d %H:%M:%S");
+var formatDate = d3.timeFormat("%m/%d %H:%M");
 var formatDateForNews = d3.timeFormat("%Y-%m-%dT%H:%M:%S");
 
 var currentTime;
@@ -168,7 +160,7 @@ function loadMapData() {
 
 function loadTweetData() {
 	// load in tweet data
-	d3.json("data/newdata.json", function(error, data) {
+	d3.json("data/data_1.json", function(error, data) {
 		if (error) {
 			return console.warn(error);
 		}
@@ -178,23 +170,22 @@ function loadTweetData() {
 
 		allTweetData = data;
 
-		var oldestTweetTime = formatDateForNews(new Date(allTweetData[0].time.getTime() - 300000));
-		var newestTweetTime = formatDateForNews(new Date(allTweetData[allTweetData.length - 1].time.getTime() + 300000));
+		var oldestTweetTime = new Date(allTweetData[0].time.getTime() - 300000);
+		var newestTweetTime = new Date(allTweetData[allTweetData.length - 1].time.getTime() + 300000);
 
 		loadNewsData(oldestTweetTime, newestTweetTime);
 	});
 }
 
 function loadNewsData(oldestTweetTime, newestTweetTime) {
-	console.log("oldestTweetTime = " + oldestTweetTime);
-	console.log("newestTweetTime = " + newestTweetTime);
 	//news api code
 	var url = 'https://newsapi.org/v2/everything?' +
 				//'country=us&' +
 				'q=united states&' +
 				'lang=en&' +
-				'from=' + oldestTweetTime + '&' +
-				'to=' + newestTweetTime + '&' +
+				'from=' + formatDateForNews(oldestTweetTime) + '&' +
+				'to=' + formatDateForNews(newestTweetTime) + '&' +
+				'pageSize=15&' +
 				'apiKey=664519e8bb6249439872b39dde950086';
 
 	console.log(url);
@@ -219,13 +210,13 @@ function loadNewsData(oldestTweetTime, newestTweetTime) {
 				minTime = currentTime - 1;
 				maxTime = currentTime + timeRange;
 
-				createTimeline();
+				createTimeline(newestTweetTime.getTime() - oldestTweetTime.getTime());
 				timer = d3.timer(timerCallback);
 			})
 	});
 }
 
-function createTimeline() {
+function createTimeline(duration) {
 	// append slider for timeline
 	sliderMargin = {right: 50, left: 50};
 	sliderWidth = width - sliderMargin.left - sliderMargin.right;
@@ -259,7 +250,7 @@ function createTimeline() {
 	    .attr("class", "ticks")
 	    .attr("transform", "translate(0," + 18 + ")")
 	  .selectAll("text")
-	  .data(sliderX.ticks(8))
+	  .data(sliderX.ticks(d3.timeMillisecond.every(duration / 10.0)))
 	  .enter().append("text")
 	    .attr("x", sliderX)
 	    .attr("text-anchor", "middle")
@@ -298,6 +289,28 @@ function createTimeline() {
 		           .duration(500)      
 		           .style("opacity", 0);   
 		    });
+
+	d3.select("#vizdiv").append("br");
+
+	var buttonDiv = d3.select("#vizdiv").append("div")
+						.attr("id", "buttonDiv");
+
+	playPauseButton = buttonDiv.append("button")
+								.attr("type", "button");
+
+	playPauseButton.append("p").text("Pause");
+
+	playPauseButton.attr("onclick", "togglePlayPause()");
+}
+
+function togglePlayPause() {
+	play = !play;
+	if (play) {
+		playPauseButton.select("p").text("Pause");
+	}
+	else {
+		playPauseButton.select("p").text("Play");
+	}
 }
 
 function updateTimeline()
@@ -320,7 +333,7 @@ function updateTimeline()
 }
 
 function timerCallback(elapsed) {
-	if (!draggingHandle && currentTime < maxTime) {
+	if (play && !draggingHandle && currentTime < maxTime) {
 		currentTime += sliderSpeed;
 		if (currentTime > maxTime) {
 			currentTime = maxTime;
@@ -352,6 +365,7 @@ function createCircles() {
 	.data(currentTweetData)
 	.enter()
 	.append("circle")
+	.attr("class", "tweetCircle")
 	.attr("cx", function(d) {
 		if (projection([d.source.lng, d.source.lat]) != null)
 			return projection([d.source.lng, d.source.lat])[0];
@@ -365,8 +379,6 @@ function createCircles() {
 			return 0;
 	})
 	.attr("r", globalRad)
-		.style("fill", "steelblue")	
-		.style("opacity", 0.85)	
 
 	// Modification of custom tooltip code provided by Malcolm Maclean, "D3 Tips and Tricks" 
 	// http://www.d3noob.org/2013/01/adding-tooltips-to-d3js-graph.html
