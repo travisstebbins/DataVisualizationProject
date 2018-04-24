@@ -423,7 +423,11 @@ function createCircles() {
 			else
 				return 0;
 		})
+		
+		.attr("visibility", visFilter)
+		.attr("destination", function(d){return d.destination.name})
 
+		
     // handle animation of circle
     .transition()
 	.duration(500)
