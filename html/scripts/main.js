@@ -15,6 +15,13 @@ var width = 960;
 var height = 540;
 var sliderHeight = 50;
 
+
+
+//Radius of circles
+var initialRad = 100;
+var globalRad = Math.sqrt(initialRad);
+
+
 // D3 Projection
 var projection = d3.geoAlbersUsa();
 				   //.translate([width/2, height/2])    	// translate to center of screen
@@ -28,7 +35,66 @@ var path = d3.geoPath()               // path generator that will convert GeoJSO
 var svg = d3.select("body")
 			.append("svg")
 			.attr("width", width)
-			.attr("height", height);
+			.attr("height", height)
+			.append("g");
+
+
+var e= d3.select(".selection");
+
+var brush = d3.brush();
+
+function visFilter(d){
+e = d3.select(".selection");
+if(e["_groups"][0][0]==null )
+{
+	return "visible";
+}
+if( e.attr("x")==null)
+	return "visible";
+
+
+	if(d3.select(this).attr("fx")> e.attr("x")&&
+		d3.select(this).attr("fy")>e.attr("y")&&
+		d3.select(this).attr("fx")<parseInt(e.attr("x"))+parseInt(e.attr("width"))&&
+		d3.select(this).attr("fy")<parseInt(e.attr("y"))+parseInt(e.attr("height"))) 
+		return "visible";
+	else 
+		return "hidden";
+}
+
+	
+
+
+function endbrush(d)
+{
+	
+			svg.selectAll("circle").attr("visibility", visFilter);}
+ brush.on("end", endbrush);
+
+function zoomed() {
+	
+
+   svg.attr("transform",d3.event.transform);
+
+
+	var a=d3.event.transform.k;
+	//console.log(a);
+	if(a>0)
+		globalRad=Math.sqrt(initialRad/a);
+	svg.selectAll("circle").attr("r" , globalRad);
+}
+
+var zoom = d3.zoom()
+    .scaleExtent([.75, 20])
+    .on("zoom", zoomed);
+
+
+
+d3.select("body").append("br");
+
+
+
+
 
 var sliderSvg = d3.select("body")
 					.append("svg")
@@ -47,6 +113,7 @@ var div = d3.select("body")
     		.style("opacity", 0);
 
 // append paragraph for displaying tweet content
+d3.select("body").append("br");
 var tweetDisplay = d3.select("body")
 					 .append("p")
 					 .style("font-size", "16px");
@@ -175,7 +242,7 @@ d3.json("data/us-states.json", function(json) {
 			else
 				return 0;
 		})
-		.attr("r", 10)
+		.attr("r", globalRad)
 			.style("fill", "steelblue")	
 			.style("opacity", 0.85)	
 
@@ -190,18 +257,37 @@ d3.json("data/us-states.json", function(json) {
 	           .style("top", (d3.event.pageY - 28) + "px")
 	           .style("width", (d[5].length * 8) + "px")
 	           .style("height", "20px");
+	
+
+			tweetDisplay.text(d[6]);
 		})   
 
 	    // fade out tooltip on mouse out               
-	    .on("mouseout", function(d) {       
+	    	.on("mouseout", function(d) {       
 	        div.transition()        
 	           .duration(500)      
 	           .style("opacity", 0);   
 	    })
+		.attr("fx", function(d) {
+			if (projection([d[4], d[3]]) != null)
+				return projection([d[4], d[3]])[0];
+			else
+				return 0;
+		})
+		.attr("fy", function(d) {
+			if (projection([d[4], d[3]]) != null)
+				return projection([d[4], d[3]])[1];
+			else
+				return 0;
+		})
 
-	    .on("click", function(d) {
-	    	tweetDisplay.text(d[6]);
-	    })
+
+		.attr("visibility", visFilter)
+		.attr("destination", function(d){return d[5]})
+
+
+
+
 
 	    // handle animation of circle
 	    .transition()
@@ -256,4 +342,8 @@ d3.json("data/us-states.json", function(json) {
 
 		createCircles();
 	}
+
+	svg.append("g").attr("class", "overlay").call(brush);
+	svg.call(zoom);
+
 });
