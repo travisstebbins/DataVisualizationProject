@@ -17,8 +17,6 @@ var sliderHeight = 100;
 
 // D3 Projection
 var projection = d3.geoAlbersUsa();
-				   //.translate([width/2, height/2])    	// translate to center of screen
-				   //.scale([1000]);          			// scale things down so see entire US
         
 // Define path generator
 var path = d3.geoPath()               // path generator that will convert GeoJSON to SVG paths
@@ -36,6 +34,8 @@ var sliderSvg = d3.select("body")
 					.attr("height", sliderHeight);
 
 var slider;
+var sliderMargin;
+var sliderWidth;
 var sliderX;
 var handle;
 var draggingHandle = false;
@@ -75,6 +75,7 @@ var formatDate = d3.timeFormat("%b %d %H:%M:%S");
 var currentTime;
 var minTime;
 var maxTime;
+var timeRange = 20000000;
 
 loadMapData();
 
@@ -100,12 +101,12 @@ function loadMapData() {
 
 function loadTweetData() {
 	// load in tweet data
-	d3.json("data/data.json", function(error, data) {
+	d3.json("data/newdata.json", function(error, data) {
 		if (error) {
 			return console.warn(error);
 		}
 		for (var i = 0; i < data.length; i++) {
-			data[i][7] = parseTweetTime(data[i][7]);
+			data[i].time = parseTweetTime(data[i].time);
 		}
 
 		allTweetData = data;
@@ -137,8 +138,8 @@ function loadNewsData() {
 				console.log(newsArticles);
 
 				currentTime = newsArticles[0].publishedAt.getTime();
-				minTime = currentTime;
-				maxTime = newsArticles[newsArticles.length - 1].publishedAt.getTime();
+				minTime = currentTime - 1;
+				maxTime = currentTime + timeRange;
 
 				createTimeline();
 				timer = d3.timer(timerCallback);
@@ -148,11 +149,11 @@ function loadNewsData() {
 
 function createTimeline() {
 	// append slider for timeline
-	var sliderMargin = {right: 50, left: 50},
-	    sliderWidth = width - sliderMargin.left - sliderMargin.right;
+	sliderMargin = {right: 50, left: 50};
+	sliderWidth = width - sliderMargin.left - sliderMargin.right;
 
 	sliderX = d3.scaleTime()
-	    .domain([new Date(d3.extent(newsArticles, function(d) { return d.publishedAt; })[0].getTime() - 10), new Date(d3.extent(newsArticles, function(d) { return d.publishedAt; })[1].getTime() + 10)])
+	    .domain([new Date(currentTime), new Date(currentTime + timeRange)])
 	    .range([0, sliderWidth])
 	    .clamp(true);
 
@@ -201,10 +202,6 @@ function createTimeline() {
 			})
 			.attr("class", "newsIcon")
 			.attr("stroke", "black")
-			// .attr("x", function (d) {
-			// 	return sliderX(d.publishedAt.getTime());
-			// })
-			// .attr("y", -15)
 			.on("mouseover", function(d) {
 		    	newsTooltip.transition()        
 		      	   .duration(200)      
@@ -224,6 +221,25 @@ function createTimeline() {
 		    });
 }
 
+function updateTimeline()
+{
+	sliderX = d3.scaleTime()
+	    .domain([new Date(currentTime), new Date(currentTime + timeRange)])
+	    .range([0, sliderWidth])
+	    .clamp(true);
+
+	slider.selectAll("text")
+	  .data(sliderX.ticks(10))
+	  .enter().append("text")
+	    .attr("x", sliderX)
+	    .attr("text-anchor", "middle")
+	    .text(function(d) { return formatDate(d); })
+	  .exit()
+	  	.remove();
+
+	//var newsIconPoints = [[0, 0], [-10, -10], [-20, -10], [-20, -40], [20, -40], [20, -10], [10, -10], [0, 0]];
+}
+
 function timerCallback(elapsed) {
 	if (!draggingHandle && currentTime < maxTime) {
 		currentTime += 10000;
@@ -234,17 +250,19 @@ function timerCallback(elapsed) {
 	}
 
 	// remove tweets that are after the current time
-	while (tweetCounter >= 0 && currentTweetData.length > 0 && tweetCounter - 1 <= currentTweetData.length && currentTweetData[tweetCounter - 1][7].getTime() > currentTime) {
+	while (tweetCounter >= 0 && currentTweetData.length > 0 && tweetCounter - 1 <= currentTweetData.length && currentTweetData[tweetCounter - 1].time.getTime() > currentTime) {
 		console.log("deleting element " + (tweetCounter - 1));
 		currentTweetData.splice(tweetCounter - 1, 1);
 		tweetCounter--;
 	}
 
 	// add tweets that are before the current time
-	while (tweetCounter < allTweetData.length && allTweetData[tweetCounter][7].getTime() < currentTime) {
+	while (tweetCounter < allTweetData.length && allTweetData[tweetCounter].time.getTime() < currentTime) {
 		currentTweetData.push(allTweetData[tweetCounter]);
 		tweetCounter++;
 	}
+
+	updateTimeline();
 
 	createCircles();
 }
@@ -256,14 +274,14 @@ function createCircles() {
 	.enter()
 	.append("circle")
 	.attr("cx", function(d) {
-		if (projection([d[1], d[0]]) != null)
-			return projection([d[1], d[0]])[0];
+		if (projection([d.source.lng, d.source.lat]) != null)
+			return projection([d.source.lng, d.source.lat])[0];
 		else
 			return 0;
 	})
 	.attr("cy", function(d) {
-		if (projection([d[1], d[0]]) != null)
-			return projection([d[1], d[0]])[1];
+		if (projection([d.source.lng, d.source.lat]) != null)
+			return projection([d.source.lng, d.source.lat])[1];
 		else
 			return 0;
 	})
@@ -277,11 +295,11 @@ function createCircles() {
     	tweetTooltip.transition()        
       	   .duration(200)      
            .style("opacity", .9);   
-        tweetTooltip.text(d[5])
+        tweetTooltip.text(d.destination.city + ", " + d.destination.state)
            .style("left", (d3.event.pageX) + "px")
            .style("top", (d3.event.pageY - 28) + "px")
-           .style("width", (d[5].length * 8) + "px")
-           .style("height", "20px");
+           .style("width", ((d.destination.city + ", " + d.destination.state).length * 3) + "px")
+           .style("height", ((d.destination.city + ", " + d.destination.state).length * 1) + "px");
 	})
 
     // fade out tooltip on mouse out               
@@ -292,22 +310,21 @@ function createCircles() {
     })
 
     .on("click", function(d) {
-    	tweetDisplay.text(d[6]);
+    	tweetDisplay.text(d.text);
     })
 
     // handle animation of circle
     .transition()
 	.duration(500)
 	.attr("cx", function(d) {
-		console.log("animating " + d[2] + " to " + d[5]);
-		if (projection([d[4], d[3]]) != null)
-			return projection([d[4], d[3]])[0];
+		if (projection([d.destination.lng, d.destination.lat]) != null)
+			return projection([d.destination.lng, d.destination.lat])[0];
 		else
 			return 0;
 	})
 	.attr("cy", function(d) {
-		if (projection([d[4], d[3]]) != null)
-			return projection([d[4], d[3]])[1];
+		if (projection([d.destination.lng, d.destination.lat]) != null)
+			return projection([d.destination.lng, d.destination.lat])[1];
 		else
 			return 0;
 	});
