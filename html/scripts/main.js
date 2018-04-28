@@ -61,7 +61,7 @@ function visFilter(d) {
 }
 
 function endbrush(d) {
-	svg.selectAll("circle").attr("visibility", visFilter);
+	svg.selectAll(".bcircle").attr("visibility", visFilter);
 }
 	
 function zoomed() {
@@ -70,13 +70,16 @@ function zoomed() {
 	var a = d3.event.transform.k;
 	//console.log(a);
 	if(a>0)
-		globalRad=Math.sqrt(initialRad/a);
-	svg.selectAll("circle").attr("r" , globalRad);
+			globalRad=Math.sqrt(initialRad/a);
+	svg.selectAll("circle").attr("r", function(){return Math.sqrt(parseInt(d3.select(this).attr("size"))*globalRad*globalRad)})
+
 }
 
 var zoom = d3.zoom()
     .scaleExtent([.75, 20])
     .on("zoom", zoomed);
+
+var bigBalls = new Map();
 
 d3.select("#vizdiv").append("br");
 
@@ -379,41 +382,11 @@ function createCircles() {
 			return 0;
 	})
 	.attr("r", globalRad)
-
+	.style("fill", "steelblue")	
+		.style("opacity", 0.85)
 	// Modification of custom tooltip code provided by Malcolm Maclean, "D3 Tips and Tricks" 
 	// http://www.d3noob.org/2013/01/adding-tooltips-to-d3js-graph.html
-	.on("mouseover", function(d) {
-		var cityState;
-		if (d.destination.city.length > 0 && d.destination.state.length > 0) {
-			cityState = d.destination.city + ", " + d.destination.state;
-		}
-		else if (d.destination.city.length > 0) {
-			cityState = d.destination.city;
-		}
-		else if (d.destination.state.length > 0) {
-			cityState = d.destination.state;
-		}
-		else
-		{
-			cityState = d.destination.name;
-		}
-    	tweetTooltip.transition()        
-      	   .duration(200)      
-           .style("opacity", .9);   
-        tweetTooltip.text(cityState)
-           .style("left", (d3.event.pageX) + "px")
-           .style("top", (d3.event.pageY - 28) + "px")
-           .style("width", (cityState.length * 5) + "px")
-           .style("height", (cityState.length * 3) + "px");
-		tweetDisplay.text(d.text);
-	})
-
-    // fade out tooltip on mouse out               
-    .on("mouseout", function(d) {       
-        tweetTooltip.transition()        
-           .duration(500)      
-           .style("opacity", 0);   
-    })
+	
 
 		.attr("fx", function(d) {
 			if (projection([d.destination.lng, d.destination.lat]) != null)
@@ -429,7 +402,16 @@ function createCircles() {
 		})
 		
 		.attr("visibility", visFilter)
-		.attr("destination", function(d){return d.destination.name})
+		
+		.attr("city", function(d){return d.destination.city})
+
+		.attr("state", function(d){return d.destination.state})
+
+		.attr("topic", function(d){return d.destination.name})
+	
+		.attr("size", "1")
+			.attr("class", "circle")
+
 
 		
     // handle animation of circle
@@ -446,12 +428,78 @@ function createCircles() {
 			return projection([d.destination.lng, d.destination.lat])[1];
 		else
 			return 0;
-	});
+	})
+
+
+.on( "end", function(d){
+		//console.log(d, this)
+
+		var node = d3.select(this);
+		d3.select(this).attr("visibility", "hidden");
+				
+if(!bigBalls[d.destination.state])
+		{
+			bigBalls[d.destination.state] = svg.append("circle").attr("cx", d3.select(this).attr("fx")).attr("cy", d3.select(this).attr("fy")).attr("fx", d3.select(this).attr("fx")).attr("fy", d3.select(this).attr("fy")).attr("r", globalRad)
+	.attr("class", "bcircle")
+	.attr("visibility", visFilter)
+
+.attr("size", "1")
+.style("fill", d3.select(this).style("fill")).attr("state", d3.select(this).attr("state")).attr("city", d3.select(this).attr("city")).attr("topic", d3.select(this).attr("topic")).on("mouseover", function(){
+
+		var cityState;
+		if (d3.select(this).attr("city").length > 0 && d3.select(this).attr("state").length > 0) {
+			cityState = d3.select(this).attr("city")+ ", " + d3.select(this).attr("state");
+		}
+		else if (d.destination.city.length > 0) {
+			cityState = d3.select(this).attr("city");
+		}
+		else if (d.destination.state.length > 0) {
+			cityState = d3.select(this).attr("state");
+		}
+		else
+		{
+			cityState = d3.select(this).attr("topic");
+		}
+    	tweetTooltip.transition()        
+      	   .duration(200)      
+           .style("opacity", .9);   
+        tweetTooltip.text(cityState)
+           .style("left", (d3.event.pageX) + "px")
+           .style("top", (d3.event.pageY - 28) + "px")
+           .style("width", (cityState.length * 5) + "px")
+           .style("height", (cityState.length * 3) + "px");
+		tweetDisplay.text(d.text);
+
+
+
+}
+)
+    .on("mouseout", function(d) {       
+        tweetTooltip.transition()        
+           .duration(500)      
+           .style("opacity", 0);   
+    });
+
+		}
+		else
+		{
+			bigBalls[d.destination.state].attr("r", function(){return Math.sqrt(d3.select(this).attr("r")*d3.select(this).attr("r")+globalRad*globalRad)}).attr("size", function(){return parseInt(d3.select(this).attr("size"))+1})
+		}
+});
+
+
 
 	// delete circle if it is removed from currentTwitterData
-	svg.selectAll("circle")
+	svg.selectAll(".circle")
 		.data(currentTweetData)
-		.exit()
+		.exit().each(function(d){
+			bigBalls[d.destination.state].attr("r",function(d){return (Math.sqrt( d3.select(this).attr("r")*d3.select(this).attr("r")-globalRad*globalRad))+.0000000001})
+.attr("size", function(){
+
+return parseInt(d3.select(this).attr("size"))-1;
+})
+		})
+
 		.remove();
 
 
