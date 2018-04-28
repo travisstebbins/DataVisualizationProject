@@ -437,9 +437,9 @@ function createCircles() {
 		var node = d3.select(this);
 		d3.select(this).attr("visibility", "hidden");
 				
-if(!bigBalls[d.destination.state])
+if(!bigBalls[d.destination.city])
 		{
-			bigBalls[d.destination.state] = svg.append("circle").attr("cx", d3.select(this).attr("fx")).attr("cy", d3.select(this).attr("fy")).attr("fx", d3.select(this).attr("fx")).attr("fy", d3.select(this).attr("fy")).attr("r", globalRad)
+			bigBalls[d.destination.city] = svg.append("circle").attr("cx", d3.select(this).attr("fx")).attr("cy", d3.select(this).attr("fy")).attr("fx", d3.select(this).attr("fx")).attr("fy", d3.select(this).attr("fy")).attr("r", globalRad)
 	.attr("class", "bcircle")
 	.attr("visibility", visFilter)
 
@@ -483,7 +483,7 @@ if(!bigBalls[d.destination.state])
 		}
 		else
 		{
-			bigBalls[d.destination.state].attr("r", function(){return Math.sqrt(d3.select(this).attr("r")*d3.select(this).attr("r")+globalRad*globalRad)}).attr("size", function(){return parseInt(d3.select(this).attr("size"))+1})
+			bigBalls[d.destination.city].attr("r", function(){return Math.sqrt(d3.select(this).attr("r")*d3.select(this).attr("r")+globalRad*globalRad)}).attr("size", function(){return parseInt(d3.select(this).attr("size"))+1})
 		}
 });
 
@@ -493,7 +493,7 @@ if(!bigBalls[d.destination.state])
 	svg.selectAll(".circle")
 		.data(currentTweetData)
 		.exit().each(function(d){
-			bigBalls[d.destination.state].attr("r",function(d){return (Math.sqrt( d3.select(this).attr("r")*d3.select(this).attr("r")-globalRad*globalRad))+.0000000001})
+			bigBalls[d.destination.city].attr("r",function(d){return (Math.sqrt( d3.select(this).attr("r")*d3.select(this).attr("r")-globalRad*globalRad))+.0000000001})
 .attr("size", function(){
 
 return parseInt(d3.select(this).attr("size"))-1;
