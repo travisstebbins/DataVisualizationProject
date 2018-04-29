@@ -364,7 +364,7 @@ function timerCallback(elapsed) {
 
 // creates and animates the circles based on currentTwitterData array
 function createCircles() {
-	svg.selectAll("circle")
+	svg.selectAll(".circle")
 	.data(currentTweetData)
 	.enter()
 	.append("circle")
@@ -471,6 +471,73 @@ if(!bigBalls[d.destination.city])
 		tweetDisplay.text(d.text);
 
 
+				
+		var states=new Map();
+		var sideX =[];
+		var sideY =[];
+		var pos=1;
+		sideX.push("Total");
+		sideY.push(0);
+		var cstate = d.destination.state;
+		d3.selectAll(".circle").filter(function(d){
+			return d.destination.state==cstate})
+			.each(function(d){
+				if(!states[d.source.name])
+				{
+					states[d.source.name]=pos;
+					pos = pos+1;
+					
+					sideX.push(d.source.name);
+					sideY.push(1);
+					sideY[0]+=1;
+				}
+				else
+				{
+
+					sideY[states[d.source.name]]+=1;
+					sideY[0]+=1;
+
+				}
+			});
+
+		var hAll = 200+parseInt(sideY[0].toString()[0])*50;
+		var space = d3.select(".barChart").attr("width", 120*sideY.length+300).attr("height", hAll+100);
+		space.html("");
+		space = space.append("g").attr("transform", "translate(" + 40+ "," + 20+ ")");
+		var ladX= d3.scaleBand().rangeRound([0,120*sideY.length]);
+	var ladY =d3.scaleLinear().rangeRound([hAll,0]);
+	ladX.domain(sideX);
+	ladY.domain([0, sideY[0]+1]);
+	
+space.append("g")
+      .attr("transform", "translate(0," + hAll + ")")
+      .call(d3.axisBottom(ladX));
+
+  // add the y Axis
+  space.append("g")
+      .call(d3.axisLeft(ladY));
+
+
+	for(var x=0; x<sideX.length; x++){
+	  space.append("rect")
+      .attr("class", "bar")
+      .attr("x", function(){
+		console.log(parseInt(ladX(sideX[x])),sideX[x]);
+
+return parseInt(ladX(sideX[x]))+parseInt((ladX.bandwidth()-100)/2.0)})
+      .attr("y", function(){
+		console.log(sideY[x],ladY(sideY[x]))
+	return ladY(sideY[x])})
+      .attr("width", /*ladX.bandwidth()*/ 100)
+      .attr("height", function(d) { return (hAll-1)
+*sideY[x]*1.0/(sideY[0]+1); })
+	.style("fill", d3.select(this).style("fill"));
+}
+
+
+
+
+
 
 }
 )
@@ -508,3 +575,4 @@ return parseInt(d3.select(this).attr("size"))-1;
 	svg.call(zoom);
 
 }
+d3.select("body").append("svg").attr("class", "barChart");
