@@ -14,13 +14,30 @@ http://bl.ocks.org/mbostock/3888852  */
 var width = 960;
 var height = 500;
 var sliderHeight = 100;
-
+var colorMap = new Map();
 
 
 //Radius of circles
 var initialRad = 100;
 var globalRad = Math.sqrt(initialRad);
+var nextColor=0;
 
+
+// CSS Color Names
+// Compiled by @bobspace.
+//
+// A javascript array containing all of the color names listed in the CSS Spec.
+// The full list can be found here: http://www.w3schools.com/cssref/css_colornames.asp
+// Use it as you please, 'cuz you can't, like, own a color, man.
+
+var CSS_COLOR_NAMES = ["AliceBlue","AntiqueWhite","Aqua","Aquamarine","Azure","Beige","Bisque","Black","BlanchedAlmond","Blue","BlueViolet","Brown","BurlyWood","CadetBlue","Chartreuse","Chocolate","Coral","CornflowerBlue","Cornsilk","Crimson","Cyan","DarkBlue","DarkCyan","DarkGoldenRod","DarkGray","DarkGrey","DarkGreen","DarkKhaki","DarkMagenta","DarkOliveGreen","Darkorange","DarkOrchid","DarkRed","DarkSalmon","DarkSeaGreen","DarkSlateBlue","DarkSlateGray","DarkSlateGrey","DarkTurquoise","DarkViolet","DeepPink","DeepSkyBlue","DimGray","DimGrey","DodgerBlue","FireBrick","FloralWhite","ForestGreen","Fuchsia","Gainsboro","GhostWhite","Gold","GoldenRod","Gray","Grey","Green","GreenYellow","HoneyDew","HotPink","IndianRed","Indigo","Ivory","Khaki","Lavender","LavenderBlush","LawnGreen","LemonChiffon","LightBlue","LightCoral","LightCyan","LightGoldenRodYellow","LightGray","LightGrey","LightGreen","LightPink","LightSalmon","LightSeaGreen","LightSkyBlue","LightSlateGray","LightSlateGrey","LightSteelBlue","LightYellow","Lime","LimeGreen","Linen","Magenta","Maroon","MediumAquaMarine","MediumBlue","MediumOrchid","MediumPurple","MediumSeaGreen","MediumSlateBlue","MediumSpringGreen","MediumTurquoise","MediumVioletRed","MidnightBlue","MintCream","MistyRose","Moccasin","NavajoWhite","Navy","OldLace","Olive","OliveDrab","Orange","OrangeRed","Orchid","PaleGoldenRod","PaleGreen","PaleTurquoise","PaleVioletRed","PapayaWhip","PeachPuff","Peru","Pink","Plum","PowderBlue","Purple","Red","RosyBrown","RoyalBlue","SaddleBrown","Salmon","SandyBrown","SeaGreen","SeaShell","Sienna","Silver","SkyBlue","SlateBlue","SlateGray","SlateGrey","Snow","SpringGreen","SteelBlue","Tan","Teal","Thistle","Tomato","Turquoise","Violet","Wheat","White","WhiteSmoke","Yellow","YellowGreen"];
+function getNewColor(){
+	nextColor = (nextColor+1)%CSS_COLOR_NAMES.length;
+	console.log(CSS_COLOR_NAMES[nextColor]);
+	return CSS_COLOR_NAMES[nextColor];
+	
+	
+}
 
 // D3 Projection
 var projection = d3.geoAlbersUsa();
@@ -382,7 +399,11 @@ function createCircles() {
 			return 0;
 	})
 	.attr("r", globalRad)
-	.style("fill", "steelblue")	
+	.style("fill", function(d){
+		if(!colorMap[d.destination.name])
+			colorMap[d.destination.name] = getNewColor();
+
+		return colorMap[d.destination.name]})	
 		.style("opacity", 0.85)
 	// Modification of custom tooltip code provided by Malcolm Maclean, "D3 Tips and Tricks" 
 	// http://www.d3noob.org/2013/01/adding-tooltips-to-d3js-graph.html
