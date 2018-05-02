@@ -34,13 +34,14 @@
 
 #buttonDiv {
   margin: auto;
-  width: 60px;
+  width: 350;
   height: 40px;
 }
 
 #buttonDiv button {
-  width: 60px;
+  width: 100px;
   height: 30px;
+  margin: 10px;
 }
 
 #buttonDiv button p {

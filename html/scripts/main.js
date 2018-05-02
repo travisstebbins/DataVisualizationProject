@@ -16,6 +16,9 @@ var height = 500;
 var sliderHeight = 100;
 var colorMap = new Map();
 
+var tweetDataFile = "data_may.json";
+var newsDataFile = "news.json";
+
 
 //Radius of circles
 var initialRad = 100;
@@ -111,8 +114,10 @@ var sliderWidth;
 var sliderX;
 var handle;
 var draggingHandle = false;
-var sliderSpeed = 1000;
+var sliderSpeed = 500;
 var playPauseButton;
+var speedUpButton;
+var slowDownButton;
 var play = true;
         
 // Append Div for tweet tooltip to svg
@@ -180,7 +185,7 @@ function loadMapData() {
 
 function loadTweetData() {
 	// load in tweet data
-	d3.json("data/data_1.json", function(error, data) {
+	d3.json("data/" + tweetDataFile, function(error, data) {
 		if (error) {
 			return console.warn(error);
 		}
@@ -199,51 +204,78 @@ function loadTweetData() {
 
 function loadNewsData(oldestTweetTime, newestTweetTime) {
 	//news api code
-	var url = 'https://newsapi.org/v2/everything?' +
-				//'country=us&' +
-				'q=united states&' +
-				'lang=en&' +
-				'from=' + formatDateForNews(oldestTweetTime) + '&' +
-				'to=' + formatDateForNews(newestTweetTime) + '&' +
-				'pageSize=15&' +
-				'apiKey=664519e8bb6249439872b39dde950086';
+	// var url = 'https://newsapi.org/v2/everything?' +
+	// 			//'country=us&' +
+	// 			'q=united states&' +
+	// 			'lang=en&' +
+	// 			'from=' + formatDateForNews(oldestTweetTime) + '&' +
+	// 			'to=' + formatDateForNews(newestTweetTime) + '&' +
+	// 			'pageSize=15&' +
+	// 			'apiKey=664519e8bb6249439872b39dde950086';
 
-	console.log(url);
+	// console.log(url);
 
-	var req = new Request(url);
+	// var req = new Request(url);
 
-	fetch(req)
-		.then(function(response) {
-			response.json().then(function(data) {
-				newsArticles = data.articles;
-				newsArticles.forEach(function (element) {
-					element.publishedAt = parseNewsTime(element.publishedAt);
-				});
+	d3.json("data/" + newsDataFile, function(error, data) {
+		if (error) {
+			return console.warn(error);
+		}
+		newsArticles = data.articles;
+		newsArticles.forEach(function (element) {
+			element.publishedAt = parseNewsTime(element.publishedAt);
+		});
 
-				newsArticles.sort(function (a, b) {
-					return a.publishedAt - b.publishedAt;
-				});
+		newsArticles.sort(function (a, b) {
+			return a.publishedAt - b.publishedAt;
+		});
 
-				console.log(newsArticles);
+		//newsArticles.splice(0, 10);
+		//newsArticles.splice(newsArticles.length - 4, 4);
+		console.log(newsArticles);
 
-				currentTime = newsArticles[0].publishedAt.getTime();
-				minTime = currentTime - 1;
-				maxTime = currentTime + timeRange;
+		currentTime = newsArticles[0].publishedAt.getTime();
+		minTime = currentTime - 1;
+		maxTime = newsArticles[newsArticles.length - 1].publishedAt.getTime() + 1;
 
-				createTimeline(newestTweetTime.getTime() - oldestTweetTime.getTime());
-				timer = d3.timer(timerCallback);
-			})
-	});
+		//createTimeline(newestTweetTime.getTime() - oldestTweetTime.getTime());
+		createTimeline(new Date(minTime), new Date(maxTime));
+		timer = d3.timer(timerCallback);
+	})
+
+	// fetch(req)
+	// 	.then(function(response) {
+	// 		response.json().then(function(data) {
+	// 			newsArticles = data.articles;
+	// 			newsArticles.forEach(function (element) {
+	// 				element.publishedAt = parseNewsTime(element.publishedAt);
+	// 			});
+
+	// 			newsArticles.sort(function (a, b) {
+	// 				return a.publishedAt - b.publishedAt;
+	// 			});
+
+	// 			console.log(newsArticles);
+
+	// 			currentTime = newsArticles[0].publishedAt.getTime();
+	// 			minTime = currentTime - 1;
+	// 			maxTime = currentTime + timeRange;
+
+	// 			createTimeline(newestTweetTime.getTime() - oldestTweetTime.getTime());
+	// 			timer = d3.timer(timerCallback);
+	// 		})
+	// });
 }
 
-function createTimeline(duration) {
+function createTimeline(minTime, maxTime) {
 	// append slider for timeline
 	sliderMargin = {right: 50, left: 50};
 	sliderWidth = width - sliderMargin.left - sliderMargin.right;
 
 	sliderX = d3.scaleTime()
 	    //.domain([new Date(currentTime), new Date(currentTime + timeRange)])
-	   	.domain([new Date(d3.extent(newsArticles, function(d) { return d.publishedAt; })[0].getTime() - 10), new Date(d3.extent(newsArticles, function(d) { return d.publishedAt; })[1].getTime() + 10)])
+	   	//.domain([new Date(d3.extent(newsArticles, function(d) { return d.publishedAt; })[0].getTime() - 10), new Date(d3.extent(newsArticles, function(d) { return d.publishedAt; })[1].getTime() + 10)])
+	    .domain([minTime, maxTime])
 	    .range([0, sliderWidth])
 	    .clamp(true);
 
@@ -270,7 +302,7 @@ function createTimeline(duration) {
 	    .attr("class", "ticks")
 	    .attr("transform", "translate(0," + 18 + ")")
 	  .selectAll("text")
-	  .data(sliderX.ticks(d3.timeMillisecond.every(duration / 10.0)))
+	  .data(sliderX.ticks(d3.timeMillisecond.every((maxTime.getTime() - minTime.getTime()) / 10.0)))
 	  .enter().append("text")
 	    .attr("x", sliderX)
 	    .attr("text-anchor", "middle")
@@ -342,6 +374,20 @@ function createTimeline(duration) {
 	playPauseButton.append("p").text("Pause");
 
 	playPauseButton.attr("onclick", "togglePlayPause()");
+
+	speedUpButton = buttonDiv.append("button")
+								.attr("type", "button");
+
+	speedUpButton.append("p").text("Speed Up");
+
+	speedUpButton.attr("onclick", "speedUp()");
+
+	slowDownButton = buttonDiv.append("button")
+								.attr("type", "button");
+
+	slowDownButton.append("p").text("Slow Down");
+
+	slowDownButton.attr("onclick", "slowDown()");
 }
 
 function togglePlayPause() {
@@ -351,6 +397,18 @@ function togglePlayPause() {
 	}
 	else {
 		playPauseButton.select("p").text("Play");
+	}
+}
+
+function speedUp() {
+	sliderSpeed *= 2;
+}
+
+function slowDown() {
+	sliderSpeed /= 2;
+	if (sliderSpeed < 2)
+	{
+		sliderSpeed = 2;
 	}
 }
 
