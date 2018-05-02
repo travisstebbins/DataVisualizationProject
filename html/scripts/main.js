@@ -291,7 +291,11 @@ function createTimeline(duration) {
 			.attr("transform", function(d) {
 				return "translate(" + sliderX(d.publishedAt.getTime()) + ", " + -5 + ")";
 			})
-			.attr("class", "newsIcon")
+			.each(function (d, i) {
+				var color = getNewColor();
+				colorMap[d.title] = color;
+				d3.select(this).attr("fill", color);
+			})
 			.on("mouseover", function(d) {
 		    	newsTooltip.transition()        
 		      	   .duration(200)      
@@ -309,6 +313,10 @@ function createTimeline(duration) {
 		           .duration(500)      
 		           .style("opacity", 0);   
 		    });
+
+	// slider.selectAll(".newsIcon").forEach(function (d) {
+	// 	this.attr("fill", getNewColor());
+	// });
 
 	d3.select("#vizdiv").append("br");
 

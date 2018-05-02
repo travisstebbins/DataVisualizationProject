@@ -81,7 +81,7 @@ div.newsTooltip {
 }
 
 .newsIcon {
-  fill: steelblue;
+  /*fill: steelblue;*/
   stroke: rgb(150, 175, 255);
   stroke-width: 2px;
 }
