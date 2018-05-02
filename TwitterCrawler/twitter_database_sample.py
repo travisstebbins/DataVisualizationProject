@@ -10,13 +10,18 @@ MONGO_USER = os.environ['MONGO_USER']
 MONGO_PASS = os.environ['MONGO_PASS']
 MONGO_END = os.environ['MONGO_END']
 
+# collections
+# tweets - first run
+# new_tweets - second run
+# tweets_Apr24 - 3 word news query
+
 client = pymongo.MongoClient("mongodb+srv://" + MONGO_USER + ":" + MONGO_PASS + "@" + MONGO_END)
 db = client.dataviz
-tweetsCollection = db.new_tweets
+tweetsCollection = db.data_viz_tweets
 
 tweets = list(tweetsCollection.find())
 print(len(tweets))
 
 # write the result
-with open('tweets.json', 'w') as outfile:
+with open('tweets_Apr24.json', 'w') as outfile:
     outfile.write(dumps(tweets))
