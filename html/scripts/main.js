@@ -282,6 +282,15 @@ function createTimeline(duration) {
 
 	var newsIconPoints = [[0, 0], [-10, -10], [-20, -10], [-20, -40], [20, -40], [20, -10], [10, -10], [0, 0]];
 
+	d3.selection.prototype.moveToBack = function() {  
+        return this.each(function() { 
+            var firstChild = this.parentNode.firstChild; 
+            if (firstChild) { 
+                this.parentNode.insertBefore(this, firstChild); 
+            } 
+        });
+    };
+
 	slider.selectAll("path")
 		.data(newsArticles)
 		.enter()
@@ -312,6 +321,10 @@ function createTimeline(duration) {
 		        newsTooltip.transition()        
 		           .duration(500)      
 		           .style("opacity", 0);   
+		    })
+
+		    .on("click", function(d) {
+		    	d3.select(this).moveToBack();
 		    });
 
 	// slider.selectAll(".newsIcon").forEach(function (d) {
